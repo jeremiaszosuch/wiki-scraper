@@ -1,6 +1,8 @@
 from bs4 import BeautifulSoup
-import requests
+from collections import Counter
 import os
+import requests
+import string
 
 class WikiScraper:
     def __init__(self, base_url: str, use_local: bool = False) -> None:
@@ -39,7 +41,7 @@ class WikiScraper:
         # Fetch site content
         soup = self._get_soup(phrase)
         
-        # Find the right article block
+        # Find the article block
         content = soup.select_one("#mw-content-text .mw-parser-output")
         if not content:
             raise ValueError("Article content block not found")
@@ -75,3 +77,30 @@ class WikiScraper:
             if row_data:
                 data.append(row_data)
         return data
+    
+    def count_words(self, phrase: str) -> dict[str, int]:
+        # Fetch site content
+        soup = self._get_soup(phrase)
+        
+        # Find the article block
+        content = soup.select_one("#mw-content-text .mw-parser-output")
+        if not content:
+            raise ValueError("Article content block not found")
+        
+        # Get all the text from paragraphs
+        text = ""
+        paragraphs = content.find_all("p")
+        for p in paragraphs:
+            text += p.get_text() + " "
+            
+        # Seperate words, remove punctuation and normalize
+        words = text.lower().split()
+        clean_words = []
+        translator = str.maketrans("", "", string.punctuation)
+        for word in words:
+            stripped_word = word.translate(translator)
+            if len(stripped_word) > 1:
+                clean_words.append(stripped_word)
+                
+        # Count words
+        return dict(Counter(clean_words))
