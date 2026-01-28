@@ -1,6 +1,7 @@
 import os
 import string
 import time
+from urllib.parse import unquote
 from collections import Counter
 import requests
 from bs4 import BeautifulSoup
@@ -62,7 +63,7 @@ class WikiScraper:
                 if self.base_url not in href:
                     continue
 
-            phrase = href.split("/wiki/")[-1]
+            phrase = unquote(href.split("/wiki/")[-1])
             if ":" not in phrase and "#" not in phrase:
                 links.append(phrase)
 
