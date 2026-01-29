@@ -60,6 +60,21 @@ class WikiScraper:
 
         return BeautifulSoup(response.text, "html.parser")
 
+    def _get_article_content(self, phrase: str):
+        # Fetch site content
+        soup = self._get_soup(phrase)
+
+        # Find the main article block
+        content = soup.select_one("#mw-content-text .mw-parser-output")
+        if not content:
+            raise ValueError("Article content block not found")
+
+        # Delete all reference notes
+        for ref in content.select("sup.reference"):
+            ref.decompose()
+
+        return content
+
     def _get_valid_links(self, soup: BeautifulSoup) -> list[str]:
         # Find the main article block
         content = soup.select_one("#mw-content-text .mw-parser-output")
@@ -89,17 +104,8 @@ class WikiScraper:
         return links
 
     def get_summary(self, phrase: str) -> str:
-        # Fetch site content
-        soup = self._get_soup(phrase)
-
-        # Find the main article block
-        content = soup.select_one("#mw-content-text .mw-parser-output")
-        if not content:
-            raise ValueError("Article content block not found")
-
-        # Delete all reference notes
-        for ref in content.select("sup.reference"):
-            ref.decompose()
+        # Get the main article from the site
+        content = self._get_article_content(phrase)
 
         # Get all the paragraphs and find the first one with text
         paragraphs = content.find_all("p", recursive=False)
@@ -111,11 +117,11 @@ class WikiScraper:
         raise ValueError("No text paragraph found in the article")
 
     def get_table(self, phrase: str, table_number: int) -> list[list[str]]:
-        # Fetch site content
-        soup = self._get_soup(phrase)
+        # Get the main article from the site
+        content = self._get_article_content(phrase)
 
         # Find the table
-        tables = soup.find_all("table")
+        tables = content.find_all("table")
         idx = table_number - 1
         if idx < 0 or idx >= len(tables):
             raise ValueError(
@@ -123,10 +129,6 @@ class WikiScraper:
                 f"Article has {len(tables)} tables."
             )
         target = tables[idx]
-
-        # Delete all reference notes
-        for ref in tables.select("sup.reference"):
-            ref.decompose()
 
         # Extract data from the table
         data = []
@@ -140,17 +142,8 @@ class WikiScraper:
         return data
 
     def count_words(self, phrase: str) -> dict[str, int]:
-        # Fetch site content
-        soup = self._get_soup(phrase)
-
-        # Find the main article block
-        content = soup.select_one("#mw-content-text .mw-parser-output")
-        if not content:
-            raise ValueError("Article content block not found")
-
-        # Delete all reference notes
-        for ref in content.select("sup.reference"):
-            ref.decompose()
+        # Get the main article from the site
+        content = self._get_article_content(phrase)
 
         # Get all the text from paragraphs
         text = ""
