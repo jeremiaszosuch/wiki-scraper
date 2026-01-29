@@ -172,8 +172,14 @@ class WikiScraper:
         translator = str.maketrans("", "", string.punctuation)
         for word in words:
             stripped_word = word.translate(translator)
-            if len(stripped_word) > 1:
-                clean_words.append(stripped_word)
+
+            # Filter out single letter words and numbers
+            if len(stripped_word) < 2:
+                continue
+            if stripped_word.isdigit():
+                continue
+
+            clean_words.append(stripped_word)
 
         # Count words
         return dict(Counter(clean_words))
