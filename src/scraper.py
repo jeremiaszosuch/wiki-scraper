@@ -8,10 +8,16 @@ from bs4 import BeautifulSoup
 
 
 class WikiScraper:
-    def __init__(self, base_url: str, use_local: bool = False) -> None:
+    def __init__(self, base_url: str, use_local: bool = False,
+                 cache_files: bool = False) -> None:
         self.base_url = base_url
         self.use_local = use_local
+        self.cache_files = cache_files
         self.data_dir = "data"
+
+        # Make sure the directory exists
+        if self.cache_files and not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
 
     def _get_headers(self) -> dict[str, str]:
         return {
@@ -25,9 +31,14 @@ class WikiScraper:
         # Normalize the phrase
         safe_phrase = phrase.strip().replace(" ", "_")
 
+        # Replace slashes in file path
+        file_path = os.path.join(
+            self.data_dir,
+            f"{safe_phrase.replace("/", "_")}.html"
+        )
+
         # Get content from the local file
         if self.use_local:
-            file_path = os.path.join(self.data_dir, f"{safe_phrase}.html")
             if os.path.exists(file_path):
                 with open(file_path, "r", encoding="utf-8") as file:
                     return BeautifulSoup(file, "html.parser")
@@ -38,6 +49,14 @@ class WikiScraper:
         url = f"{self.base_url}/wiki/{safe_phrase}"
         response = requests.get(url, headers=self._get_headers(), timeout=5)
         response.raise_for_status()
+
+        # Cache sites for local use
+        if self.cache_files:
+            try:
+                with open(file_path, "w", encoding="utf-8") as file:
+                    file.write(response.text)
+            except OSError:
+                pass
 
         return BeautifulSoup(response.text, "html.parser")
 
@@ -78,10 +97,14 @@ class WikiScraper:
         if not content:
             raise ValueError("Article content block not found")
 
+        # Delete all reference notes
+        for ref in content.select("sup.reference"):
+            ref.decompose()
+
         # Get all the paragraphs and find the first one with text
         paragraphs = content.find_all("p", recursive=False)
         for p in paragraphs:
-            text = p.get_text(strip=True)
+            text = p.get_text().strip()
             if text:
                 return text
 
@@ -101,12 +124,16 @@ class WikiScraper:
             )
         target = tables[idx]
 
+        # Delete all reference notes
+        for ref in tables.select("sup.reference"):
+            ref.decompose()
+
         # Extract data from the table
         data = []
         rows = target.find_all("tr")
         for row in rows:
             cells = row.find_all(["th", "td"])
-            row_data = [cell.get_text(strip=True) for cell in cells]
+            row_data = [cell.get_text().strip() for cell in cells]
             if row_data:
                 data.append(row_data)
 
@@ -120,6 +147,10 @@ class WikiScraper:
         content = soup.select_one("#mw-content-text .mw-parser-output")
         if not content:
             raise ValueError("Article content block not found")
+
+        # Delete all reference notes
+        for ref in content.select("sup.reference"):
+            ref.decompose()
 
         # Get all the text from paragraphs
         text = ""
@@ -173,8 +204,8 @@ class WikiScraper:
                     time.sleep(wait)
 
             # Continue crawling despite an error on one of the sites
-            except (requests.exceptions.RequestException, ValueError,
-                    AttributeError, FileNotFoundError):
+            except (requests.exceptions.RequestException, FileNotFoundError,
+                    ValueError, AttributeError):
                 continue
 
         return results
