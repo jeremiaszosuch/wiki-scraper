@@ -133,9 +133,24 @@ class WikiScraper:
         # Extract data from the table
         data = []
         rows = target.find_all("tr")
+
         for row in rows:
+            row_data = []
             cells = row.find_all(["th", "td"])
-            row_data = [cell.get_text().strip() for cell in cells]
+
+            for cell in cells:
+                text = cell.get_text(strip=True)
+
+                # Check cell for colspan
+                try:
+                    colspan = int(cell.get("colspan", 1))
+                except ValueError:
+                    colspan = 1
+
+                # If cell spans across columns add it multiple times
+                for _ in range(colspan):
+                    row_data.append(text)
+
             if row_data:
                 data.append(row_data)
 
