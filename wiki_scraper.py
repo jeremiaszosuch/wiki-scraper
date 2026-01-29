@@ -1,9 +1,10 @@
 import argparse
 import sys
-from src.scraper import WikiScraper
+from src.app import WikiApp
 
 # Default base URL
 DEFAULT_URL = "https://bulbapedia.bulbagarden.net"
+
 
 def main():
     # Argument parser configuration
@@ -23,29 +24,29 @@ def main():
         )
     )
 
-    # Main Actions
+    # Main actions
     actions = parser.add_mutually_exclusive_group(required=True)
     actions.add_argument(
-        "--summary", 
-        type=str, 
+        "--summary",
+        type=str,
         help=(
             "Fetches and displays the summary "
             "(first paragraph) of a given phrase."
         )
     )
     actions.add_argument(
-        "--table", 
-        type=str, 
+        "--table",
+        type=str,
         help="Fetches data from a specific table (requires --number)."
     )
     actions.add_argument(
-        "--count-words", 
-        type=str, 
+        "--count-words",
+        type=str,
         help="Counts words in the article and updates the JSON file."
     )
     actions.add_argument(
-        "--auto-count-words", 
-        type=str, 
+        "--auto-count-words",
+        type=str,
         help=(
             "Recursively counts words starting from a phrase "
             "(requires --depth and --wait)."
@@ -53,14 +54,14 @@ def main():
     )
     actions.add_argument(
         "--analyze-relative-word-frequency",
-        action="store_true", 
+        action="store_true",
         help=(
             "Analyzes relative word frequency "
             "(requires --mode and --count)."
         )
     )
 
-    # Options and modifiers
+    # Actions modifiers
     config = parser.add_argument_group("configuration")
     config.add_argument(
         "--number",
@@ -102,52 +103,23 @@ def main():
     # Parse arguments
     args = parser.parse_args()
 
-    # Initialize Scraper
+    # Initialize the app
+    app = WikiApp(args, DEFAULT_URL)
     try:
-        scraper = WikiScraper(base_url=DEFAULT_URL, use_local=False)
-    except Exception as e:
-        print(f"[ERROR] Failed to initialize scraper: {e}")
+        app.run()
+    except KeyboardInterrupt:
+        print("[INFO] Operation interrupted by user. Exiting...")
+        sys.exit(0)
+    except ValueError as e:
+        print(f"[ERROR] Validation failed: {e}")
         sys.exit(1)
-    
-    # Action: Summary
-    if args.summary:
-        result = scraper.get_summary(args.summary)
-        print(result)
+    except OSError as e:
+        print(f"[ERROR] System error: {e}")
+        sys.exit(1)
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        print(f"[ERROR] An unexpected error occurred: {e}")
+        sys.exit(1)
 
-    # Action: Table
-    elif args.table:
-        if not args.number:
-            print("[ERROR] Option --table requires argument --number!")
-            sys.exit(1)
-        scraper.get_table(args.table, args.number, args.first_row_is_header)
-
-    # Action: Count Words
-    elif args.count_words:
-        scraper.count_words(args.count_words) # TODO
-
-    # Action: Auto Count Words
-    elif args.auto_count_words:
-        if not args.depth or not args.wait:
-            print(
-                "[ERROR] Option --auto-count-words "
-                "requires arguments --depth and --wait!"
-            )
-            sys.exit(1)
-        scraper.auto_count_words(args.auto_count_words, args.depth, args.wait) # TODO
-
-    # Action: Analysis
-    elif args.analyze_relative_word_frequency:
-        if not args.mode or not args.count:
-            print(
-                "[ERROR] Option --analyze-relative-word-frequency "
-                "requires arguments --mode and --count!"
-            )
-            sys.exit(1)
-        # TODO analyzer.analyze(...)
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n[INFO] Interrupted by user.")
-        sys.exit(0)
+    main()
