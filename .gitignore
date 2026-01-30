@@ -1,2 +1,19 @@
+# IDE settings
+.vscode/
+
+# Python & Virtual Environment
+__pycache__/
+*.py[cod]
 .venv/
-data/
+
+# Tests
+.pytest_cache/
+
+# Project data
+data/**
+*.json
+*.csv
+*.png
+
+# Exceptions
+!data/Team_Rocket.html
