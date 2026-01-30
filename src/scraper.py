@@ -2,7 +2,7 @@ import os
 import string
 from urllib.parse import unquote
 from collections import Counter
-import pandas
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
@@ -104,7 +104,7 @@ class WikiScraper:
 
         # Extract data from the table
         try:
-            dfs = pandas.read_html(str(target), header=None, flavor='bs4')
+            dfs = pd.read_html(str(target), header=None, flavor='bs4')
         except ValueError:
             return []
 
