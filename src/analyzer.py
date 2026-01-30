@@ -1,55 +1,93 @@
-from collections import Counter
+import pandas as pd
+from wordfreq import word_frequency, top_n_list
 
 
 class Analyzer:
-    def convert_table_to_dicts(
-        self,
-        raw_table: list[list[str]],
-        use_first_row_as_header: bool = False
-    ) -> list[dict[str, str]]:
-        if not raw_table:
-            return []
+    def __init__(self, language_code: str = "en"):
+        self.lang = language_code
 
-        # Prepare data, if no header create dummy row
-        processed_data = []
-        if use_first_row_as_header:
-            headers = raw_table[0]
-            data_rows = raw_table[1:]
+    def create_dataframe(self, raw_data: list[list[str]],
+                         first_row_is_header: bool) -> pd.DataFrame:
+        if not raw_data:
+            return pd.DataFrame()
+
+        try:
+            # Check if there are columnd headers
+            if first_row_is_header and len(raw_data) > 1:
+                headers = raw_data[0]
+                data = raw_data[1:]
+                df = pd.DataFrame(data, columns=headers)
+            else:
+                df = pd.DataFrame(raw_data)
+
+            # Set first column as index
+            if not df.empty and df.shape[1] > 0:
+                df.set_index(df.columns[0], inplace=True)
+
+            return df
+        except ValueError as e:
+            print(f"[ERROR] Failed to convert table to DataFrame: {e}")
+            return pd.DataFrame()
+
+    def get_value_frequencies(self, df: pd.DataFrame) -> pd.DataFrame:
+        if df.empty:
+            return pd.DataFrame()
+
+        stats = df.stack().value_counts().reset_index()
+        stats.columns = ["Value", "Count"]
+        return stats
+
+    def analyze_relative_frequency(self, article_counts: dict[str, int],
+                                   mode: str, limit: int) -> pd.DataFrame:
+        # Check if there is any article word data
+        if not article_counts:
+            return pd.DataFrame()
+        total_article_words = sum(article_counts.values())
+        if total_article_words == 0:
+            return pd.DataFrame()
+
+        # Sort data based on language
+        if mode and "language" in mode.lower():
+            # Get top n words from language
+            top_words = top_n_list(self.lang, limit)
+            df = pd.DataFrame(top_words, columns=["word"])
+
+            # Get frequency for each word
+            df["freq_lang"] = df["word"].apply(
+                lambda w: word_frequency(w, self.lang)
+            )
+
+            # Map article word count data
+            df["count"] = df["word"].map(article_counts).fillna(0)
+
+            # Calculate article words frequencies
+            df["freq_article"] = df["count"] / total_article_words
+
+        # Sort data based on article
         else:
-            num_columns = len(raw_table[0])
-            headers = [f"Column_{i+1}" for i in range(num_columns)]
-            data_rows = raw_table
+            # Create a dataframe from word count data
+            df = pd.DataFrame(list(article_counts.items()),
+                              columns=["word", "count"])
 
-        # Convert data into a dictionary
-        for row in data_rows:
-            if not row:
-                continue
-            processed_data.append(dict(zip(headers, row)))
+            # Calculate article words frequencies
+            df["freq_article"] = df["count"] / total_article_words
 
-        return processed_data
+            # Sort data in descending order
+            df = df.sort_values(by="count", ascending=False).head(limit)
 
-    def aggregate_word_counts(
-        self,
-        crawling_results: dict[str, dict[str, int]]
-    ) -> dict[str, int]:
-        # Aggregate word counts from all sites into one table
-        global_counter = Counter()
-        for page_data in crawling_results.values():
-            global_counter.update(page_data)
+            # Add language words frequencies
+            df["freq_lang"] = df["word"].apply(
+                lambda w: word_frequency(w, self.lang)
+            )
 
-        return dict(global_counter)
+        # Normalize article frequency
+        max_art = df["freq_article"].max()
+        if max_art > 0:
+            df["freq_article"] = df["freq_article"] / max_art
 
-    def get_top_words(self, word_counts: dict[str, int], top_n: int = 10,
-                      min_length: int = 0) -> list[tuple[str, int]]:
-        filtered_items = []
+        # Normalize language frequency
+        max_lang = df["freq_lang"].max()
+        if max_lang > 0:
+            df["freq_lang"] = df["freq_lang"] / max_lang
 
-        # Filter out words shorter than set length
-        for word, count in word_counts.items():
-            if len(word) < min_length:
-                continue
-            filtered_items.append((word, count))
-
-        # Sort words in descending order
-        sorted_items = sorted(filtered_items, key=lambda x: x[1], reverse=True)
-
-        return sorted_items[:top_n]
+        return df[["word", "freq_article", "freq_lang"]]
