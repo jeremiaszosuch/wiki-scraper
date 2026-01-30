@@ -186,3 +186,7 @@ class WikiApp:
             self._handle_auto_crawl()
         elif self.args.analyze_relative_word_frequency:
             self._handle_analysis()
+
+    def close(self) -> None:
+        if self.scraper:
+            self.scraper.close()
