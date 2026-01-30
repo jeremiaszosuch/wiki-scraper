@@ -27,8 +27,8 @@ class Visualizer:
 
         # Prepare data
         words = df["word"].tolist()
-        freq_article = df["freq_article"].tolist()
-        freq_lang = df["freq_lang"].tolist()
+        freq_article = df["freq_article"].fillna(0).tolist()
+        freq_lang = df["freq_lang"].fillna(0).tolist()
 
         # Set label positions and bar width
         x = np.arange(len(words))
