@@ -14,6 +14,7 @@ class WikiScraper:
         self.use_local = use_local
         self.cache_files = cache_files
         self.data_dir = "data"
+        self.session = None
 
         # Start session
         if not self.use_local:
@@ -175,5 +176,5 @@ class WikiScraper:
         return links
 
     def close(self) -> None:
-        if not self.use_local and self.session:
+        if self.session:
             self.session.close()
