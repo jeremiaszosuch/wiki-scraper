@@ -175,5 +175,5 @@ class WikiScraper:
         return links
 
     def close(self) -> None:
-        if self.session:
+        if not self.use_local and self.session:
             self.session.close()
