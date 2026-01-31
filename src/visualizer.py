@@ -8,7 +8,6 @@ generating matplotlib charts for frequency analysis.
 
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
 
 
 class Visualizer:
@@ -57,34 +56,30 @@ class Visualizer:
             print("[WARNING] No available data to plot.")
             return
 
-        # Prepare data
-        words = df["word"].tolist()
-        freq_article = df["freq_article"].fillna(0).tolist()
-        freq_lang = df["freq_lang"].fillna(0).tolist()
+        # Set up data
+        plot_data = df.set_index("word")[["freq_article", "freq_lang"]]
+        plot_data = plot_data.fillna(0)
 
-        # Set label positions and bar width
-        x = np.arange(len(words))
-        width = 0.35
+        # Add column labels
+        plot_data.columns = ["Article", "Language"]
 
-        # Inititate the plot
+        # Initialize plot
         fig, ax = plt.subplots(figsize=(12, 6))
 
-        # Create two bars next to each other
-        ax.bar(x - width/2, freq_article, width,
-               label="Article", color="skyblue")
-        ax.bar(x + width/2, freq_lang, width,
-               label="Language", color="orange")
-
-        # Set scale
-        ax.set_yscale("log")
+        # Draw the plot
+        plot_data.plot(
+            kind="bar",
+            ax=ax,
+            width=0.7,
+            logy=True,
+            color=["skyblue", "orange"]
+        )
 
         # Stylistic changes
         ax.set_ylabel("Frequency")
-        ax.set_xticks(x)
-        ax.set_xticklabels(words, rotation=45)
+        ax.set_xlabel("")
         ax.set_title("Word Frequency Comparison: Article vs Language")
         ax.grid(True, axis="y", which="major", linestyle="--", alpha=0.5)
-        ax.legend()
         plt.tight_layout()
 
         # Save the plot to file
