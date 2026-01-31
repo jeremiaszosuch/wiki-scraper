@@ -1,3 +1,11 @@
+"""
+Main entry point for the WikiScraper application.
+
+This script handles command-line argument parsing and initializes the
+WikiApp controller to perform various actions like summarizing articles,
+scraping tables, or analyzing word frequencies.
+"""
+
 import argparse
 import sys
 from src.app import WikiApp
@@ -7,6 +15,13 @@ DEFAULT_URL = "https://bulbapedia.bulbagarden.net"
 
 
 def main():
+    """
+    Executes the main application logic.
+
+    Sets up the argument parser with all available commands and options,
+    initializes the WikiApp, and handles top-level exceptions to ensure
+    clean exit codes.
+    """
     # Argument parser configuration
     parser = argparse.ArgumentParser(
         description=(

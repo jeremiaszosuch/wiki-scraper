@@ -1,13 +1,42 @@
+"""
+Logic for data processing and statistical analysis.
+
+This module handles the conversion of raw data into Pandas DataFrames,
+performs frequency analysis using the 'wordfreq' library, and prepares
+data for visualization.
+"""
+
 import pandas as pd
 from wordfreq import word_frequency, top_n_list
 
 
 class Analyzer:
+    """A helper class for analyzing and structuring table data"""
+
     def __init__(self, language_code: str = "en"):
+        """
+        Initialize the analyzer with a specific language.
+
+        Args:
+            language_code (str): ISO 639-1 language code (def: 'en').
+        """
         self.lang = language_code
 
     def create_dataframe(self, raw_data: list[list[str]],
                          first_row_is_header: bool) -> pd.DataFrame:
+        """
+        Converts raw list-of-lists data into a Pandas DataFrame.
+
+        Automatically sets the first column as the index if possible.
+
+        Args:
+            raw_data (list[list[str]]): The raw table data.
+            first_row_is_header (bool): Whether to treat the first row
+                                        as column headers.
+
+        Returns:
+            pd.DataFrame: The processed DataFrame (empty on failure).
+        """
         if not raw_data:
             return pd.DataFrame()
 
@@ -30,6 +59,15 @@ class Analyzer:
             return pd.DataFrame()
 
     def get_value_frequencies(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Calculates the frequency of every unique value.
+
+        Args:
+            df (pd.DataFrame): The input DataFrame.
+
+        Returns:
+            pd.DataFrame: A DataFrame with columns ['Value', 'Count'].
+        """
         if df.empty:
             return pd.DataFrame()
 
@@ -39,6 +77,21 @@ class Analyzer:
 
     def analyze_relative_frequency(self, article_counts: dict[str, int],
                                    mode: str, limit: int) -> pd.DataFrame:
+        """
+        Compares word usage in articles against general language usage.
+
+        Calculates relative frequencies and normalizes them.
+
+        Args:
+            article_counts (dict): Dictionary mapping words to counts.
+            mode (str): 'article' (top words from article) or
+                'language' (top common words from language).
+            limit (int): The number of top words to analyze.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing normalized frequencies
+                for the article and the language.
+        """
         # Check if there is any article word data
         if not article_counts:
             return pd.DataFrame()

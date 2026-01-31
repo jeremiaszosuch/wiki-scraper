@@ -1,10 +1,25 @@
+"""
+Visualization and Output Module.
+
+This module handles the presentation of data to the user. It includes
+utilities for printing full Pandas DataFrames to the console and
+generating matplotlib charts for frequency analysis.
+"""
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
 
 class Visualizer:
+    """
+    A helper class for printing tables and plotting charts.
+    """
+
     def __init__(self) -> None:
+        """
+        Initialize the visualizer and set the matplotlib style.
+        """
         available_styles = plt.style.available
         if "bmh" in available_styles:
             plt.style.use("bmh")
@@ -12,6 +27,12 @@ class Visualizer:
             plt.style.use("ggplot")
 
     def print_pandas_table(self, df: pd.DataFrame) -> None:
+        """
+        Prints a Pandas DataFrame to stdout without truncation.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to print.
+        """
         if df.empty:
             print("[WARNING] No available data to view.")
         else:
@@ -21,6 +42,17 @@ class Visualizer:
                 print(df)
 
     def plot_comparison(self, df: pd.DataFrame, filename: str) -> None:
+        """Creates a bar chart comparing word frequency.
+
+        Generates and saves a bar chart comparing
+        article vs. language word frequency.
+
+        Args:
+            df (pd.DataFrame): Data containing 'freq_article'
+                and 'freq_lang'.
+            filename (str): The path where the chart image
+                will be saved.
+        """
         if df.empty:
             print("[WARNING] No available data to plot.")
             return

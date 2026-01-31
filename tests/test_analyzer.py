@@ -1,5 +1,6 @@
 """
 Unit tests for the Analyzer class.
+
 Tests data processing, dataframe creation, and frequency analysis logic.
 """
 
@@ -15,8 +16,7 @@ def fixture_analyzer():
 
 def test_create_dataframe_logic(analyzer):
     """
-    Check if create_dataframe correctly sets the first column as
-    the INDEX.
+    Check if create_dataframe correctly sets the columns.
     """
     raw_data = [
         ["Pokemon", "Type 1", "Type 2"],
@@ -39,6 +39,8 @@ def test_create_dataframe_logic(analyzer):
 
 def test_normalization(analyzer):
     """
+    Checks analyze_relative_frequency math.
+
     Ensure analyze_relative_frequency correctly counts and normalizes
     the values.
     """

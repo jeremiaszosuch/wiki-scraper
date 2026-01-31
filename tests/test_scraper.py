@@ -1,5 +1,6 @@
 """
 Unit tests for the WikiScraper class.
+
 Tests HTML parsing and link filtering logic using mocks (no internet required).
 """
 
@@ -20,6 +21,7 @@ def fixture_scraper():
 def test_valid_links_filtering(mock_content, mock_soup, scraper):
     """
     Checks link filtering.
+
     Should ignore external links (http) and system links (File:, Help:).
     """
     html_fragment = """
@@ -52,10 +54,10 @@ def test_valid_links_filtering(mock_content, mock_soup, scraper):
 @patch("src.scraper.WikiScraper._get_article_content")
 def test_word_cleaning(mock_content, mock_soup, scraper):
     """
-    Checks text cleaning:
-    - Removes punctuation
-    - Ignores numbers
-    - Ignores words shorter than 2 characters
+    Checks text cleaning.
+
+    Removes punctuation, ignores numbers and ignores words shorter
+    than 2 characters.
     """
     html_fragment = "<p>Hello, world! 123 a</p>"
     soup_fragment = BeautifulSoup(html_fragment, "html.parser")

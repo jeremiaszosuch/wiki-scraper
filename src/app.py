@@ -1,3 +1,12 @@
+"""
+Application Controller Module.
+
+This module acts as the central controller for the WikiScraper.
+It initializes the Scraper, Analyzer, and Visualizer,
+validates command-line arguments, and directs the flow of data between
+these components based on the user's request.
+"""
+
 import time
 import json
 import os
@@ -10,7 +19,18 @@ from .visualizer import Visualizer
 
 
 class WikiApp:
+    """
+    Main application class governing the execution flow of the CLI tool.
+    """
+
     def __init__(self, args: argparse.Namespace, base_url: str) -> None:
+        """
+        Initialize the application with parsed arguments and config.
+
+        Args:
+            args (argparse.Namespace): Parsed command-line arguments.
+            base_url (str): The root URL for the Wiki to be scraped.
+        """
         self.args = args
         self.word_counts_file = "word-counts.json"
 
@@ -20,6 +40,12 @@ class WikiApp:
         self.visualizer = Visualizer()
 
     def _validate_arguments(self) -> None:
+        """
+        Validates dependencies between command-line arguments.
+
+        Raises:
+            ValueError: If required arguments are missing or invalid.
+        """
         if self.args.table:
             if self.args.number is None:
                 raise ValueError("Option --table requires argument --number!")
@@ -53,10 +79,12 @@ class WikiApp:
                 )
 
     def _handle_summary(self) -> None:
+        """Fetches and prints the summary of the requested article."""
         summary = self.scraper.get_summary(self.args.summary)
         print(summary)
 
     def _handle_table(self) -> None:
+        """Fetches a specific table, saves it, and shows statistics."""
         # Fetch the table raw data
         phrase = self.args.table
         raw_table = self.scraper.get_table(
@@ -79,6 +107,15 @@ class WikiApp:
         self.visualizer.print_pandas_table(stats_df)
 
     def _update_word_counts(self, phrase: str) -> None:
+        """
+        Counts words in a specific article.
+
+        Gets results of word counts from a page and merges them
+        into the JSON file.
+
+        Args:
+            phrase (str): The Wiki article title to scrape.
+        """
         # Get word counts with current phrase
         new_counts = self.scraper.count_words(phrase)
 
@@ -100,6 +137,12 @@ class WikiApp:
             json.dump(global_data, f, indent=4)
 
     def _handle_auto_crawl(self) -> None:
+        """
+        Performs a Breadth-First Search (BFS) crawl to count words.
+
+        Starts from a given phrase and follows internal Wiki links
+        up to a specified depth, updating the global word count file.
+        """
         start_phrase = self.args.auto_count_words
         max_depth = self.args.depth
         wait_time = self.args.wait
@@ -149,6 +192,12 @@ class WikiApp:
                 time.sleep(wait_time)
 
     def _handle_analysis(self) -> None:
+        """
+        Performs statistical analysis on collected word counts.
+
+        Generates a DataFrame comparing article word frequency
+        vs language frequency and optionally plots the result.
+        """
         # Check if we the data exists in a file
         if not os.path.exists(self.word_counts_file):
             raise ValueError(
@@ -175,6 +224,7 @@ class WikiApp:
             self.visualizer.plot_comparison(df_results, self.args.chart)
 
     def run(self) -> None:
+        """Executes the main application logic with given arguments."""
         self._validate_arguments()
         if self.args.summary:
             self._handle_summary()
@@ -188,5 +238,6 @@ class WikiApp:
             self._handle_analysis()
 
     def close(self) -> None:
+        """Closes external resources."""
         if self.scraper:
             self.scraper.close()

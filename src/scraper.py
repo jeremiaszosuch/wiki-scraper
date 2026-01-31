@@ -1,3 +1,11 @@
+"""
+Scraping Module.
+
+This module handles all network interactions, HTML parsing and data
+extraction from the Wiki. It includes functionality for caching pages
+locally and cleaning text data.
+"""
+
 import os
 import string
 from urllib.parse import unquote
@@ -8,8 +16,20 @@ from bs4 import BeautifulSoup
 
 
 class WikiScraper:
+    """A class responsible for fetching and parsing Wiki pages."""
+
     def __init__(self, base_url: str, use_local: bool = False,
                  cache_files: bool = False) -> None:
+        """
+        Initialize the scraper.
+
+        Args:
+            base_url (str): The root URL of the Wiki.
+            use_local (bool): If True, fetch pages from local
+                'data' directory.
+            cache_files (bool): If True, save fetched pages to
+                'data' directory.
+        """
         self.base_url = base_url
         self.use_local = use_local
         self.cache_files = cache_files
@@ -31,6 +51,18 @@ class WikiScraper:
             os.makedirs(self.data_dir)
 
     def _get_soup(self, phrase: str) -> BeautifulSoup:
+        """
+        Fetches the content for a given phrase.
+
+        Handles local file reading or network requests based on
+        configuration.
+
+        Args:
+            phrase (str): The article title.
+
+        Returns:
+            soup (BeautifulSoup): The parsed HTML of the full page.
+        """
         # Normalize the phrase
         safe_phrase = phrase.strip().replace(" ", "_")
 
@@ -59,6 +91,17 @@ class WikiScraper:
         return BeautifulSoup(response.text, "html.parser")
 
     def _get_article_content(self, soup: BeautifulSoup):
+        """
+        Extracts the main content block from the page.
+
+        Removes all the reference tags from the extracted text.
+
+        Args:
+            soup (BeautifulSoup): The parsed HTML of the full page.
+
+        Returns:
+            Tag: The HTML tag containing the main article content.
+        """
         # Find the main article block
         content = soup.select_one("#mw-content-text .mw-parser-output")
         if not content:
@@ -71,6 +114,15 @@ class WikiScraper:
         return content
 
     def get_summary(self, phrase: str) -> str:
+        """
+        Retrieves the first non-empty paragraph of the article.
+
+        Args:
+            phrase (str): The article title.
+
+        Returns:
+            str: The summary text.
+        """
         # Fetch site content
         soup = self._get_soup(phrase)
 
@@ -87,6 +139,16 @@ class WikiScraper:
         raise ValueError("No summary paragraph found")
 
     def get_table(self, phrase: str, table_number: int) -> list[list[str]]:
+        """
+        Extracts data from a specific table in the article.
+
+        Args:
+            phrase (str): The article title.
+            table_number (int): The 1-based index of the table to fetch.
+
+        Returns:
+            list[list[str]]: The table data as a list of rows.
+        """
         # Fetch site content
         soup = self._get_soup(phrase)
 
@@ -119,6 +181,17 @@ class WikiScraper:
         return data
 
     def count_words(self, phrase: str) -> dict[str, int]:
+        """
+        Counts occurrences of words in the article text.
+
+        Removes punctuation, numbers, and single-letter words.
+
+        Args:
+            phrase (str): The article title.
+
+        Returns:
+            dict[str, int]: A dictionary mapping words to counts.
+        """
         # Fetch site content
         soup = self._get_soup(phrase)
 
@@ -147,6 +220,17 @@ class WikiScraper:
         return dict(Counter(clean_words))
 
     def get_valid_links(self, phrase: str) -> list[str]:
+        """
+        Finds valid internal Wiki links within the article.
+
+        Filters out external links, special pages, and anchors.
+
+        Args:
+            phrase (str): The article title.
+
+        Returns:
+            list[str]: A list of clean Wiki phrases/titles found.
+        """
         # Fetch site content
         soup = self._get_soup(phrase)
 
@@ -176,5 +260,6 @@ class WikiScraper:
         return links
 
     def close(self) -> None:
+        """Closes the active HTTP session."""
         if self.session:
             self.session.close()

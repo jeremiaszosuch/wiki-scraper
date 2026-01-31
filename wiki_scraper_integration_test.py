@@ -1,3 +1,11 @@
+"""
+Integration test for the WikiScraper.
+
+This script verifies the scraping logic by running against a local
+HTML file. It ensures that the HTML parsing and text extraction logic
+work as expected.
+"""
+
 import os
 from src.scraper import WikiScraper
 
@@ -7,6 +15,13 @@ EXPECTED_END = "outpost in the Sevii Islands."
 
 
 def main():
+    """
+    Executes the integration test logic.
+
+    Loads a local HTML file via the WikiScraper (in local mode),
+    extracts the summary, and asserts that the content matches
+    expected start and end phrases.
+    """
     # Check if the local file exists
     file_path = os.path.join("data", f"{TEST_PHRASE}.html")
     if not os.path.exists(file_path):
