@@ -158,8 +158,17 @@ class WikiScraper:
         # Get the main article from the site
         content = self._get_article_content(soup)
 
-        # Find the table
-        tables = content.find_all("table")
+        # Fetch all tables
+        all_tables = content.find_all("table")
+
+        # Filter out table containers
+        tables = []
+        for table in all_tables:
+            if table.find("table"):
+                continue
+            tables.append(table)
+
+        # Get the right table
         idx = table_number - 1
         if idx < 0 or idx >= len(tables):
             raise ValueError(

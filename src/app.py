@@ -99,8 +99,9 @@ class WikiApp:
         )
 
         # Save data to file
-        filename = f"{phrase}.csv"
-        df.to_csv(filename, header=self.args.first_row_is_header)
+        if not df.empty:
+            filename = f"{phrase}.csv"
+            df.to_csv(filename, header=self.args.first_row_is_header)
 
         # Show value frequencies stats
         stats_df = self.analyzer.get_value_frequencies(df)

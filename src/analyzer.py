@@ -49,10 +49,6 @@ class Analyzer:
             else:
                 df = pd.DataFrame(raw_data)
 
-            # Set first column as index
-            if not df.empty and df.shape[1] > 0:
-                df.set_index(df.columns[0], inplace=True)
-
             return df
         except ValueError as e:
             print(f"[ERROR] Failed to convert table to DataFrame: {e}")
@@ -71,9 +67,24 @@ class Analyzer:
         if df.empty:
             return pd.DataFrame()
 
-        stats = df.stack().value_counts().reset_index()
-        stats.columns = ["Value", "Count"]
-        return stats
+        # Check for the index
+        if df.shape[1] > 1:
+            data = df.iloc[:, 1:]
+        else:
+            data = df
+
+        # Get values from the table
+        stats = data.astype(str).values.flatten()
+
+        # Count values
+        counts = pd.Series(stats).value_counts()
+
+        # Format the output
+        result = counts.reset_index()
+        result.columns = ["Value", "Count"]
+        result = result[result["Value"] != "nan"]
+
+        return result
 
     def analyze_relative_frequency(self, article_counts: dict[str, int],
                                    mode: str, limit: int) -> pd.DataFrame:
