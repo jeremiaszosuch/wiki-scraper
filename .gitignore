@@ -17,3 +17,8 @@ data/**
 
 # Exceptions
 !data/Team_Rocket.html
+!data/wiki_long.html
+!data/wiki_tricky.html
+!data/ext_de.txt
+!data/ext_en.txt
+!data/ext_pl.txt
