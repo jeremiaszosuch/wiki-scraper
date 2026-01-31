@@ -66,9 +66,11 @@ class WikiScraper:
         # Normalize the phrase
         safe_phrase = phrase.strip().replace(" ", "_")
 
+        # Create a path for local use and caching
+        file_path = os.path.join(self.data_dir, f"{safe_phrase}.html")
+
         # Get content from the local file
         if self.use_local:
-            file_path = os.path.join(self.data_dir, f"{safe_phrase}.html")
             if os.path.exists(file_path):
                 with open(file_path, "r", encoding="utf-8") as file:
                     return BeautifulSoup(file, "html.parser")
