@@ -14,7 +14,7 @@ Profesjonalne narzędzie CLI do pobierania, analizowania i wizualizacji danych z
 
 1.  **Sklonuj repozytorium:**
     ```bash
-    git clone [https://github.com/JeremiSho/wiki-scraper.git](https://github.com/JeremiSho/wiki-scraper.git)
+    git clone https://github.com/JeremiSho/wiki-scraper.git
     cd wiki-scraper
     ```
 
