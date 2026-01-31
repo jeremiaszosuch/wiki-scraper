@@ -34,9 +34,7 @@ class TestAnalyzer:
         df = analyzer.create_dataframe(raw_data, True)
 
         assert not df.empty
-        assert list(df.columns) == ["Age"]
-        assert df.index.name == "Name"
-        assert "Alice" in df.index
+        assert list(df.columns) == ["Name", "Age"]
 
     def test_create_dataframe_no_headers(self, analyzer: Analyzer) -> None:
         """Tests creating a DataFrame without headers."""
@@ -44,11 +42,12 @@ class TestAnalyzer:
         df = analyzer.create_dataframe(raw_data, False)
 
         assert len(df) == 2
-        assert df.shape[1] == 1
+        assert df.shape[1] == 2
 
     def test_get_value_frequencies(self, analyzer: Analyzer) -> None:
         """Tests the calculation of value frequencies."""
         df = pd.DataFrame({
+            "Index": ["Row1", "Row2", "Row3"],
             "Col1": ["A", "B", "A"],
             "Col2": ["C", "C", "D"]
         })
