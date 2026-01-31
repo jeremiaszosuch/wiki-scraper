@@ -8,6 +8,7 @@ locally and cleaning text data.
 
 import os
 import string
+from io import StringIO
 from urllib.parse import unquote
 from collections import Counter
 import pandas as pd
@@ -169,7 +170,11 @@ class WikiScraper:
 
         # Extract data from the table
         try:
-            dfs = pd.read_html(str(target), header=None, flavor='bs4')
+            dfs = pd.read_html(
+                StringIO(str(target)),
+                header=None,
+                flavor='bs4'
+            )
         except ValueError:
             return []
 
