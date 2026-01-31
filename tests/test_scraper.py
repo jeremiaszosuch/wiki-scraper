@@ -1,76 +1,127 @@
 """
-Unit tests for the WikiScraper class.
+Unit tests for the WikiScraper module.
 
-Tests HTML parsing and link filtering logic using mocks (no internet required).
+This module tests the HTML parsing capabilities of the `WikiScraper`
+class. It utilizes mocking (unittest.mock) to simulate HTTP responses,
+ensuring that tests run offline. The tests verify the extraction logic
+for summaries, tables, internal links, and word counting.
 """
 
-from unittest.mock import patch
-from bs4 import BeautifulSoup
+from unittest.mock import patch, MagicMock
 import pytest
+
 from src.scraper import WikiScraper
 
 
+@pytest.fixture(name="sample_html")
+def fixture_sample_html() -> str:
+    """Provides an HTML string simulating a Wiki article structure."""
+    return """
+    <html>
+        <body>
+            <div id="mw-content-text">
+                <div class="mw-parser-output">
+                    <p>This is the <b>first</b> paragraph of the summary.</p>
+                    <p>This is the second paragraph.</p>
+                    
+                    <table class="wikitable">
+                        <tr><th>Col1</th><th>Col2</th></tr>
+                        <tr><td>A</td><td>1</td></tr>
+                        <tr><td>B</td><td>2</td></tr>
+                    </table>
+
+                    <ul>
+                        <li><a href="/wiki/Internal_Link">Internal</a></li>
+                        <li><a href="https://google.com">External</a></li>
+                        <li><a href="/wiki/File:Image.jpg">File link</a></li>
+                    </ul>
+                </div>
+            </div>
+        </body>
+    </html>
+    """
+
+
 @pytest.fixture(name="scraper")
-def fixture_scraper():
-    """Provide a fresh scraper for local use each test"""
-    return WikiScraper(base_url="base_url", use_local=True)
+def fixture_scraper() -> WikiScraper:
+    """Creates a WikiScraper instance with a mock base URL."""
+    return WikiScraper(base_url="base_url")
 
 
-@patch("src.scraper.WikiScraper._get_soup")
-@patch("src.scraper.WikiScraper._get_article_content")
-def test_valid_links_filtering(mock_content, mock_soup, scraper):
+class TestWikiScraper:
     """
-    Checks link filtering.
+    Test suite for the WikiScraper class.
 
-    Should ignore external links (http) and system links (File:, Help:).
+    Ensures correct HTML parsing and word counting logic without actual
+    network requests.
     """
-    html_fragment = """
-                    <div>
-                        <p>
-                            <a href="/wiki/Good_Link">Valid</a>
-                            <a href="https://google.com">External</a>
-                            <a href="/wiki/File:Image.jpg">File</a>
-                            <a href="/wiki/Help:Contents">Special</a>
-                        </p>
-                    </div>
-                    """
-    soup_fragment = BeautifulSoup(html_fragment, "html.parser")
 
-    # Configure mocks to return the created fragment
-    mock_soup.return_value = soup_fragment
-    mock_content.return_value = soup_fragment
+    @patch("requests.Session.get")
+    def test_get_summary(self, mock_get: MagicMock,
+                         scraper: WikiScraper, sample_html: str) -> None:
+        """Tests if the summary is correctly extracted."""
+        # Configure the mock response
+        mock_response = MagicMock()
+        mock_response.text = sample_html
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
 
-    # Fetch the links
-    links = scraper.get_valid_links("Any Phrase")
+        summary = scraper.get_summary("test_article")
 
-    # Assertions
-    assert "Good_Link" in links
-    assert "https://google.com" not in links
-    assert "File:Image.jpg" not in links
-    assert "Help:Contents" not in links
+        # Check if HTML tags are stripped and text is correct
+        assert summary == "This is the first paragraph of the summary."
 
+    @patch("requests.Session.get")
+    def test_get_table(self, mock_get: MagicMock,
+                       scraper: WikiScraper, sample_html: str) -> None:
+        """Tests if a table is correctly extracted into a list."""
+        mock_response = MagicMock()
+        mock_response.text = sample_html
+        mock_get.return_value = mock_response
 
-@patch("src.scraper.WikiScraper._get_soup")
-@patch("src.scraper.WikiScraper._get_article_content")
-def test_word_cleaning(mock_content, mock_soup, scraper):
-    """
-    Checks text cleaning.
+        table_data = scraper.get_table("test_article", 1)
 
-    Removes punctuation, ignores numbers and ignores words shorter
-    than 2 characters.
-    """
-    html_fragment = "<p>Hello, world! 123 a</p>"
-    soup_fragment = BeautifulSoup(html_fragment, "html.parser")
+        # Flatten the list of lists to check for existence of specific elements
+        flat_data = [item for sublist in table_data for item in sublist]
 
-    # Configure mocks to return the created fragment
-    mock_soup.return_value = soup_fragment
-    mock_content.return_value = soup_fragment
+        assert "A" in flat_data
+        assert "1" in flat_data
 
-    # Execute counting words
-    counts = scraper.count_words("Any Phrase")
+    @patch("requests.Session.get")
+    def test_count_words(self, mock_get: MagicMock,
+                         scraper: WikiScraper) -> None:
+        """Tests word counting logic, including normalizing data."""
+        mock_response = MagicMock()
 
-    # Assertions
-    assert counts.get("hello") == 1
-    assert counts.get("world") == 1
-    assert counts.get("123") is None
-    assert counts.get("a") is None
+        # Simulating HTML content with punctuation and numbers
+        mock_response.text = """
+            <div id="mw-content-text"><div class="mw-parser-output">
+            Hello world! Hello... world? 123
+            </div></div>
+        """
+        mock_get.return_value = mock_response
+
+        counts = scraper.count_words("test")
+
+        # 'Hello' -> 'hello' (2 times), '123' should be ignored
+        assert counts["hello"] == 2
+        assert counts["world"] == 2
+        assert "123" not in counts
+
+    @patch("requests.Session.get")
+    def test_get_valid_links(self, mock_get: MagicMock,
+                             scraper: WikiScraper, sample_html: str) -> None:
+        """Tests if the scraper correctly filters Wiki links."""
+        mock_response = MagicMock()
+        mock_response.text = sample_html
+        mock_get.return_value = mock_response
+
+        links = scraper.get_valid_links("test")
+
+        # From sample_html:
+        # /wiki/Internal_Link -> Valid
+        # https://google.com  -> Invalid (External)
+        # /wiki/File:Image.jpg -> Invalid (File)
+
+        assert "Internal_Link" in links
+        assert len(links) == 1
