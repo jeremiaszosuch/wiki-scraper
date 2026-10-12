@@ -1,2 +1,5 @@
 # Project data
 data/* linguist-vendored
+
+# Exclude from lang stats
+*.ipynb linguist-documentation=true
